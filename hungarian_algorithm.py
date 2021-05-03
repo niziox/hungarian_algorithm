@@ -42,12 +42,24 @@ def search_zeros(G):
                     break
 
             del rows_zeros[minimum[1]]
+            for x in cols_zeros.copy().keys():
+                if temp_G[minimum[1]][x] == 0:
+                    if cols_zeros[x] == 1:
+                        del cols_zeros[x]
+                    else:
+                        cols_zeros[x] -= 1
         else:
             for n, elem in enumerate(temp_G[:, minimum[1]]):
                 if elem == 0 and minimum[1] not in taken_c and n not in taken_r:
                     ind_zeros.append((n, minimum[1]))
                     break
             del cols_zeros[minimum[1]]
+            for x in rows_zeros.keys():
+                if temp_G[x][minimum[1]] == 0:
+                    if rows_zeros[x] == 1:
+                        del rows_zeros[x]
+                    else:
+                        rows_zeros[x] -= 1
         if rows_zeros:
             min_row = min(rows_zeros, key=rows_zeros.get)
         else:
@@ -75,9 +87,21 @@ def find_more_ind_zeros(G, ind_zeros):
         if maximum[0] == 'r':
             lines.append((maximum[0], max_row))
             del rows_zeros[max_row]
+            for x in cols_zeros.copy().keys():
+                if G[max_row][x] == 0:
+                    if cols_zeros[x] == 1:
+                        del cols_zeros[x]
+                    else:
+                        cols_zeros[x] -= 1
         else:
             lines.append((maximum[0], max_col))
             del cols_zeros[max_col]
+            for x in rows_zeros.copy().keys():
+                if G[x][max_col] == 0:
+                    if rows_zeros[x] == 1:
+                        del rows_zeros[x]
+                    else:
+                        rows_zeros[x] -= 1
         num_of_lines -= 1
     erased_rows = [i[1] for i in lines if i[0] == 'r']
     erased_cols = [i[1] for i in lines if i[0] == 'c']
