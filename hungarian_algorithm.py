@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import numpy as np
+from typing import List, Tuple
+
+assignation = str
+cost = int
 
 
 def reduction(G):
@@ -120,13 +124,35 @@ def find_more_ind_zeros(G, ind_zeros):
     return G
 
 
+def check_zeros(G: np.ndarray) -> List[Tuple[int, int]]:
+    ind_zeros = search_zeros(G)
+
+    # prints every next state of the G matrix
+    print("=" * 20)
+    print(G)
+    print("=" * 20)
+
+    if len(ind_zeros) == G.shape[0]:
+        return ind_zeros
+    else:
+        return check_zeros(find_more_ind_zeros(G, ind_zeros))
+
+
+def get_solution(G: np.ndarray) -> Tuple[assignation, cost]:
+    G_reduced, reduction_cost = reduction(G)
+    ind_zeros = check_zeros(G_reduced)
+
+    # FIXME: idk if the task/machine indexing should start at 1 or 0
+    solution = "\n".join([f'Zadanie {t} -> Maszyna {m}' for t, m in sorted(ind_zeros, key=lambda x: x[0])])
+    optimal_cost = sum([G[i, j] for i, j in ind_zeros])
+    return solution, optimal_cost
+
+
 if __name__ == '__main__':
     m = np.array([[20, 40, 10, 50],
                   [100, 80, 30, 40],
                   [10, 5, 60, 20],
                   [70, 30, 10, 25]])
-
-    print(search_zeros(reduction(m)[0]))
-    s = find_more_ind_zeros(reduction(m)[0], search_zeros(reduction(m)[0]))
+    s, o = get_solution(m)
     print(s)
-    print(search_zeros(s))
+    print(o)
