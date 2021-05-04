@@ -75,7 +75,7 @@ def search_zeros(G):
     return ind_zeros
 
 
-def find_more_ind_zeros(G, ind_zeros):
+def find_more_ind_zeros(G, ind_zeros, col_priority=False):
     num_of_lines = len(ind_zeros)
     rows_zeros = {}
     cols_zeros = {}
@@ -88,6 +88,8 @@ def find_more_ind_zeros(G, ind_zeros):
         max_row = max(rows_zeros, key=rows_zeros.get)
         max_col = max(cols_zeros, key=cols_zeros.get)
         maximum = ('r', max_row) if rows_zeros[max_row] >= cols_zeros[max_col] else ('c', max_col)
+        if col_priority:
+            maximum = ('c', max_col) if rows_zeros[max_row] == cols_zeros[max_col] else ('r', max_row)
         if maximum[0] == 'r':
             lines.append((maximum[0], max_row))
             del rows_zeros[max_row]
@@ -124,7 +126,7 @@ def find_more_ind_zeros(G, ind_zeros):
     return G
 
 
-def check_zeros(G: np.ndarray) -> List[Tuple[int, int]]:
+def check_zeros(G: np.ndarray, iter=1) -> List[Tuple[int, int]]:
     ind_zeros = search_zeros(G)
 
     # prints every next state of the G matrix
@@ -132,27 +134,38 @@ def check_zeros(G: np.ndarray) -> List[Tuple[int, int]]:
     print(G)
     print("=" * 20)
 
+    print(f'liczba zer niezależnych = {len(ind_zeros)}')
     if len(ind_zeros) == G.shape[0]:
         return ind_zeros
     else:
-        return check_zeros(find_more_ind_zeros(G, ind_zeros))
+        col_priority = bool(iter % 2)  # stochastic programming
+        return check_zeros(find_more_ind_zeros(G, ind_zeros, col_priority), iter + 1)
 
 
 def get_solution(G: np.ndarray) -> Tuple[assignation, cost]:
     G_reduced, reduction_cost = reduction(G)
     ind_zeros = check_zeros(G_reduced)
 
-    # FIXME: idk if the task/machine indexing should start at 1 or 0
-    solution = "\n".join([f'Zadanie {t} -> Maszyna {m}' for t, m in sorted(ind_zeros, key=lambda x: x[0])])
+    solution = "\n".join([f'Zadanie {t + 1} -> Maszyna {m + 1}' for t, m in sorted(ind_zeros, key=lambda x: x[0])])
     optimal_cost = sum([G[i, j] for i, j in ind_zeros])
     return solution, optimal_cost
 
 
 if __name__ == '__main__':
-    m = np.array([[20, 40, 10, 50],
-                  [100, 80, 30, 40],
-                  [10, 5, 60, 20],
-                  [70, 30, 10, 25]])
+    # m = np.array([[20, 40, 10, 50],
+    #               [100, 80, 30, 40],
+    #               [10, 5, 60, 20],
+    #               [70, 30, 10, 25]])
+    # s, o = get_solution(m)
+    # print(s)
+    # print(o)
+
+    m = np.array([[10, 5, 13, 15, 16, 8],
+                  [3, 9, 18, 13, 6, 5],
+                  [10, 7, 2, 2, 2, 3],
+                  [7, 11, 9, 7, 12, 10],
+                  [7, 9, 10, 4, 12, 4],
+                  [4, 6, 7, 1, 8, 9]])
     s, o = get_solution(m)
     print(s)
     print(o)
