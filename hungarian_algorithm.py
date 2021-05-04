@@ -4,13 +4,15 @@ import numpy as np
 from typing import List, Tuple
 
 assignation = str
-cost = int
+cost = str
 
 
 def reduction(G):
+    # odejęcie minimalnej wartości w każdym wierszu
     row = G.min(axis=1)
     G = G - np.array([row]).T
 
+    # odejęcie minimalnej wartości w każdej kolumnie
     col = G.min(axis=0)
     G = G - col
 
@@ -22,20 +24,27 @@ def search_zeros(G):
     cols_zeros = {}
     ind_zeros = []
     temp_G = G.copy()
+
+    # liczba zer w każdym wierszu i kolumnie
     for n, elem in enumerate(temp_G):
         rows_zeros[n] = np.count_nonzero(elem == 0)
     for n, elem in enumerate(temp_G):
         cols_zeros[n] = np.count_nonzero(temp_G[:, n] == 0)
+
+    # wiersz i kolumna z minimalną wartością zer
     min_row = min(rows_zeros, key=rows_zeros.get)
     min_col = min(cols_zeros, key=cols_zeros.get)
     ozn_c = 0
     ozn_r = 0
+
+    # wykreślanie zer niezależnych
     while rows_zeros or cols_zeros:
         if ozn_c != 0:
             minimum = ('r', min_row)
         elif ozn_r != 0:
             minimum = ('c', min_col)
         else:
+            # poszukiwanie wiersza lub kolumny z minimalną liczbą zer
             minimum = ('r', min_row) if rows_zeros[min_row] <= cols_zeros[min_col] else ('c', min_col)
         taken_r = [i[0] for i in ind_zeros]
         taken_c = [i[1] for i in ind_zeros]
@@ -45,7 +54,9 @@ def search_zeros(G):
                     ind_zeros.append((minimum[1], n))
                     break
 
+            # wykreślanie rzędu z zerem niezależnym
             del rows_zeros[minimum[1]]
+
             for x in cols_zeros.copy().keys():
                 if temp_G[minimum[1]][x] == 0:
                     if cols_zeros[x] == 1:
@@ -57,13 +68,18 @@ def search_zeros(G):
                 if elem == 0 and minimum[1] not in taken_c and n not in taken_r:
                     ind_zeros.append((n, minimum[1]))
                     break
+
+            # wykreślanie kolumny z zerem niezależnym
             del cols_zeros[minimum[1]]
+
             for x in rows_zeros.keys():
                 if temp_G[x][minimum[1]] == 0:
                     if rows_zeros[x] == 1:
                         del rows_zeros[x]
                     else:
                         rows_zeros[x] -= 1
+
+        # sprawdzenie czy zostały jeszcze jakieś niewykreślone zera
         if rows_zeros:
             min_row = min(rows_zeros, key=rows_zeros.get)
         else:
@@ -80,14 +96,20 @@ def find_more_ind_zeros(G, ind_zeros, col_priority=False):
     rows_zeros = {}
     cols_zeros = {}
     lines = []
+
+    # liczba zer w każdym wierszu i kolumnie
     for n, elem in enumerate(G):
         rows_zeros[n] = np.count_nonzero(elem == 0)
     for n, elem in enumerate(G):
         cols_zeros[n] = np.count_nonzero(G[:, n] == 0)
+
+    # liczba linii musi być równa liczbie zer niezależnych
     while num_of_lines:
         max_row = max(rows_zeros, key=rows_zeros.get)
         max_col = max(cols_zeros, key=cols_zeros.get)
         maximum = ('r', max_row) if rows_zeros[max_row] >= cols_zeros[max_col] else ('c', max_col)
+
+        # wykreślanie wiersza lub kolumny z największą ilością zer
         if col_priority:
             maximum = ('c', max_col) if rows_zeros[max_row] == cols_zeros[max_col] else ('r', max_row)
         if maximum[0] == 'r':
@@ -108,19 +130,27 @@ def find_more_ind_zeros(G, ind_zeros, col_priority=False):
                         del rows_zeros[x]
                     else:
                         rows_zeros[x] -= 1
+
+        # zmniejszenie liczby dostępnych linii do skreślenia
         num_of_lines -= 1
     erased_rows = [i[1] for i in lines if i[0] == 'r']
     erased_cols = [i[1] for i in lines if i[0] == 'c']
     min_element = np.inf
+
+    # wyszukwianie najmniejszego elementu spośród niezakreślonych elementów macierzy
     for i, row in enumerate(G):
         for j, element in enumerate(row):
             if i not in erased_rows and j not in erased_cols:
                 if element < min_element:
                     min_element = element
+
+    # odejmowanie wartości minimalnej od niezakreślonych elementów macierzy
     for i, row in enumerate(G):
         for j, element in enumerate(row):
             if i not in erased_rows and j not in erased_cols:
                 G[i][j] -= min_element
+
+            # dodawanie wartości minimalnej do podwójnie zakreślonych elementów macierzy
             elif i in erased_rows and j in erased_cols:
                 G[i][j] += min_element
     return G
@@ -129,7 +159,7 @@ def find_more_ind_zeros(G, ind_zeros, col_priority=False):
 def check_zeros(G: np.ndarray, iter=1) -> List[Tuple[int, int]]:
     ind_zeros = search_zeros(G)
 
-    # prints every next state of the G matrix
+    # wypisanie każdego stanu macierzy G
     print("=" * 20)
     print(G)
     print("=" * 20)
@@ -138,7 +168,10 @@ def check_zeros(G: np.ndarray, iter=1) -> List[Tuple[int, int]]:
     if len(ind_zeros) == G.shape[0]:
         return ind_zeros
     else:
-        col_priority = bool(iter % 2)  # stochastic programming
+        # zmiana piorytetu wykreślania kolumn lub rzędów
+        col_priority = bool(iter % 2)
+
+        # rekurencyjne wywoływanie funkcji do momentu znalezienia liczby zer niezależnych równej liczbie wierszy macierzy
         return check_zeros(find_more_ind_zeros(G, ind_zeros, col_priority), iter + 1)
 
 
@@ -148,17 +181,11 @@ def get_solution(G: np.ndarray) -> Tuple[assignation, cost]:
 
     solution = "\n".join([f'Zadanie {t + 1} -> Maszyna {m + 1}' for t, m in sorted(ind_zeros, key=lambda x: x[0])])
     optimal_cost = sum([G[i, j] for i, j in ind_zeros])
+    optimal_cost = 'Wartość funkcji celu:' + str(optimal_cost)
     return solution, optimal_cost
 
 
 if __name__ == '__main__':
-    # m = np.array([[20, 40, 10, 50],
-    #               [100, 80, 30, 40],
-    #               [10, 5, 60, 20],
-    #               [70, 30, 10, 25]])
-    # s, o = get_solution(m)
-    # print(s)
-    # print(o)
 
     m = np.array([[10, 5, 13, 15, 16, 8],
                   [3, 9, 18, 13, 6, 5],
