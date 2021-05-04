@@ -111,7 +111,7 @@ def find_more_ind_zeros(G, ind_zeros, col_priority=False):
 
         # wykreślanie wiersza lub kolumny z największą ilością zer
         if col_priority:
-            maximum = ('c', max_col) if rows_zeros[max_row] == cols_zeros[max_col] else ('r', max_row)
+            maximum = ('c', max_col) if rows_zeros[max_row] <= cols_zeros[max_col] else ('r', max_row)
         if maximum[0] == 'r':
             lines.append((maximum[0], max_row))
             del rows_zeros[max_row]
@@ -156,7 +156,7 @@ def find_more_ind_zeros(G, ind_zeros, col_priority=False):
     return G
 
 
-def check_zeros(G: np.ndarray, iter=1) -> List[Tuple[int, int]]:
+def check_zeros(G: np.ndarray) -> List[Tuple[int, int]]:
     ind_zeros = search_zeros(G)
 
     # wypisanie każdego stanu macierzy G
@@ -168,11 +168,11 @@ def check_zeros(G: np.ndarray, iter=1) -> List[Tuple[int, int]]:
     if len(ind_zeros) == G.shape[0]:
         return ind_zeros
     else:
-        # zmiana piorytetu wykreślania kolumn lub rzędów
-        col_priority = bool(iter % 2)
-
         # rekurencyjne wywoływanie funkcji do momentu znalezienia liczby zer niezależnych równej liczbie wierszy macierzy
-        return check_zeros(find_more_ind_zeros(G, ind_zeros, col_priority), iter + 1)
+        if len(search_zeros(find_more_ind_zeros(G, ind_zeros))) == len(ind_zeros):
+            return check_zeros(find_more_ind_zeros(G, ind_zeros, True))
+        else:
+            return check_zeros(find_more_ind_zeros(G, ind_zeros))
 
 
 def get_solution(G: np.ndarray) -> Tuple[assignation, cost]:
@@ -186,13 +186,22 @@ def get_solution(G: np.ndarray) -> Tuple[assignation, cost]:
 
 
 if __name__ == '__main__':
-
-    m = np.array([[10, 5, 13, 15, 16, 8],
-                  [3, 9, 18, 13, 6, 5],
-                  [10, 7, 2, 2, 2, 3],
-                  [7, 11, 9, 7, 12, 10],
-                  [7, 9, 10, 4, 12, 4],
-                  [4, 6, 7, 1, 8, 9]])
+    # m = np.array([[10, 5, 13, 15, 16, 8],
+    #               [3, 9, 18, 13, 6, 5],
+    #               [10, 7, 2, 2, 2, 3],
+    #               [7, 11, 9, 7, 12, 10],
+    #               [7, 9, 10, 4, 12, 4],
+    #               [4, 6, 7, 1, 8, 9]])
+    m = np.array([[44, 26, 25, 78, 56, 97, 85, 27, 29, 22],
+                  [80, 76, 29, 10, 70, 91, 55, 53, 89, 19],
+                  [15, 36, 96, 71, 29, 54, 99, 85, 27, 49],
+                  [77, 73, 63, 5, 82, 7, 44, 40, 64, 88],
+                  [99, 34, 55, 9, 12, 4, 85, 40, 31, 21],
+                  [1, 48, 18, 66, 96, 89, 89, 14, 34, 98],
+                  [12, 57, 2, 31, 7, 98, 21, 51, 22, 95],
+                  [36, 81, 69, 24, 15, 6, 9, 80, 37, 45],
+                  [10, 65, 79, 43, 70, 64, 15, 56, 16, 88],
+                  [89, 22, 85, 63, 78, 45, 43, 28, 9, 64]])
     s, o = get_solution(m)
     print(s)
     print(o)
